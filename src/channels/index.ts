@@ -10,3 +10,5 @@
 // telegram
 
 // whatsapp
+
+import './web.js'; // web chat
