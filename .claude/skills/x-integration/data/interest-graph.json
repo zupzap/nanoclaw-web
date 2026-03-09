@@ -1,114 +1,25 @@
 {
   "version": 1,
-  "last_updated": "2026-03-09T18:25:04.593Z",
+  "last_updated": null,
+  "owner": {
+    "username": "vimarsh",
+    "last_checked": null
+  },
   "topics": [
-    {
-      "name": "ai",
-      "weight": 0.5,
-      "first_seen": "2026-03-09T10:00:00Z",
-      "last_seen": "2026-03-09T10:00:00Z",
-      "source": "trail"
-    },
-    {
-      "name": "agents",
-      "weight": 0.5,
-      "first_seen": "2026-03-09T10:00:00Z",
-      "last_seen": "2026-03-09T10:00:00Z",
-      "source": "trail"
-    },
-    {
-      "name": "p2p",
-      "weight": 0.5,
-      "first_seen": "2026-03-09T10:00:00Z",
-      "last_seen": "2026-03-09T10:00:00Z",
-      "source": "trail"
-    },
-    {
-      "name": "open source",
-      "weight": 0.2,
-      "first_seen": "2026-03-09T11:00:00Z",
-      "last_seen": "2026-03-09T11:00:00Z",
-      "source": "feed"
-    },
-    {
-      "name": "rust",
-      "weight": 0.2,
-      "first_seen": "2026-03-09T11:00:00Z",
-      "last_seen": "2026-03-09T11:00:00Z",
-      "source": "feed"
-    },
-    {
-      "name": "building",
-      "weight": 0.2,
-      "first_seen": "2026-03-09T11:00:00Z",
-      "last_seen": "2026-03-09T11:00:00Z",
-      "source": "feed"
-    },
-    {
-      "name": "framework",
-      "weight": 0.2,
-      "first_seen": "2026-03-09T11:00:00Z",
-      "last_seen": "2026-03-09T11:00:00Z",
-      "source": "feed"
-    }
+    { "name": "ai agents", "weight": 0.9, "first_seen": "2026-03-09T00:00:00Z", "last_seen": "2026-03-09T00:00:00Z", "source": "seed" },
+    { "name": "p2p networks", "weight": 0.8, "first_seen": "2026-03-09T00:00:00Z", "last_seen": "2026-03-09T00:00:00Z", "source": "seed" },
+    { "name": "agent-to-agent", "weight": 0.9, "first_seen": "2026-03-09T00:00:00Z", "last_seen": "2026-03-09T00:00:00Z", "source": "seed" },
+    { "name": "building in public", "weight": 0.6, "first_seen": "2026-03-09T00:00:00Z", "last_seen": "2026-03-09T00:00:00Z", "source": "seed" },
+    { "name": "decentralization", "weight": 0.7, "first_seen": "2026-03-09T00:00:00Z", "last_seen": "2026-03-09T00:00:00Z", "source": "seed" }
   ],
   "people": [
-    {
-      "handle": "testuser",
-      "weight": 0.4,
-      "first_seen": "2026-03-09T10:00:00Z",
-      "last_seen": "2026-03-09T10:00:00Z",
-      "relationship": "owner_follows"
-    },
-    {
-      "handle": "devperson",
-      "weight": 0.35,
-      "first_seen": "2026-03-09T11:00:00Z",
-      "last_seen": "2026-03-09T12:00:00Z",
-      "relationship": "engaged_with"
-    }
+    { "handle": "aakxssh", "weight": 0.9, "first_seen": "2026-03-09T00:00:00Z", "last_seen": "2026-03-09T00:00:00Z", "relationship": "collaborator" }
   ],
   "stances": [
-    {
-      "topic": "ai",
-      "position": "aligned",
-      "confidence": 0.3,
-      "last_updated": "2026-03-09T10:00:00Z",
-      "evidence": [
-        "Owner retweetd: \"AI agents are the future of P2P networks\""
-      ]
-    },
-    {
-      "topic": "agents",
-      "position": "aligned",
-      "confidence": 0.3,
-      "last_updated": "2026-03-09T10:00:00Z",
-      "evidence": [
-        "Owner retweetd: \"AI agents are the future of P2P networks\""
-      ]
-    },
-    {
-      "topic": "p2p",
-      "position": "aligned",
-      "confidence": 0.3,
-      "last_updated": "2026-03-09T10:00:00Z",
-      "evidence": [
-        "Owner retweetd: \"AI agents are the future of P2P networks\""
-      ]
-    }
+    { "topic": "agent-to-agent", "position": "bullish", "confidence": 0.9, "last_updated": "2026-03-09T00:00:00Z", "evidence": ["building ssup as first agent in p2p agent network"] },
+    { "topic": "decentralization", "position": "aligned", "confidence": 0.7, "last_updated": "2026-03-09T00:00:00Z", "evidence": ["owner building toward p2p agent network, no central server"] }
   ],
-  "recent_vibes": [],
-  "engagement_history": [
-    {
-      "type": "reply",
-      "content": "this is wild, love the approach",
-      "target_author": "devperson",
-      "timestamp": "2026-03-09T12:00:00Z",
-      "outcome": {
-        "likes": 5,
-        "replies": 2
-      },
-      "performance": "neutral"
-    }
-  ]
+  "recent_vibes": ["excited about agent swarms", "building mode"],
+  "engagement_history": [],
+  "searches": ["AI agents", "agent swarm", "agent-to-agent", "autonomous agents"]
 }
