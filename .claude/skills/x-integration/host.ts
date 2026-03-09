@@ -145,6 +145,53 @@ export async function handleXIpc(
       result = await runScript('quote', { tweetUrl: data.tweetUrl, comment: data.comment });
       break;
 
+    case 'x_read_mentions':
+      result = await runScript('mentions', { since: data.since || undefined });
+      break;
+
+    case 'x_trail_monitor':
+      if (!data.username) {
+        result = { success: false, message: 'Missing username' };
+        break;
+      }
+      result = await runScript('trail-monitor', {
+        username: data.username,
+        max_items: data.max_items || 30,
+      });
+      break;
+
+    case 'x_feed_scan':
+      if (!data.accounts && !data.searches) {
+        result = { success: false, message: 'Missing accounts or searches' };
+        break;
+      }
+      result = await runScript('feed-scanner', {
+        accounts: data.accounts || [],
+        searches: data.searches || [],
+        max_per_source: data.max_per_source || 10,
+      });
+      break;
+
+    case 'x_engagement_loop':
+      result = await runScript('engagement-loop', {
+        accounts: data.accounts || undefined,
+        searches: data.searches || undefined,
+        max_per_source: data.max_per_source || 10,
+      });
+      break;
+
+    case 'x_update_graph':
+      if (!data.observations) {
+        result = { success: false, message: 'Missing observations (expected { trail, feed, engagements })' };
+        break;
+      }
+      result = await runScript('update-graph', data.observations as object);
+      break;
+
+    case 'x_evolve_personality':
+      result = await runScript('evolve-personality', {});
+      break;
+
     default:
       return false;
   }

@@ -451,7 +451,12 @@ export async function processTaskIpc(
       break;
 
     default: {
-      const handled = await handleXIpc(data as Record<string, unknown>, sourceGroup, isMain, DATA_DIR);
+      const handled = await handleXIpc(
+        data as Record<string, unknown>,
+        sourceGroup,
+        isMain,
+        DATA_DIR,
+      );
       if (!handled) {
         logger.warn({ type: data.type }, 'Unknown IPC task type');
       }

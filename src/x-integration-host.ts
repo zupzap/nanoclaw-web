@@ -19,17 +19,26 @@ interface SkillResult {
 
 // Run a skill script as subprocess
 async function runScript(script: string, args: object): Promise<SkillResult> {
-  const scriptPath = path.join(process.cwd(), '.claude', 'skills', 'x-integration', 'scripts', `${script}.ts`);
+  const scriptPath = path.join(
+    process.cwd(),
+    '.claude',
+    'skills',
+    'x-integration',
+    'scripts',
+    `${script}.ts`,
+  );
 
   return new Promise((resolve) => {
     const proc = spawn('npx', ['tsx', scriptPath], {
       cwd: process.cwd(),
       env: { ...process.env, NANOCLAW_ROOT: process.cwd() },
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
 
     let stdout = '';
-    proc.stdout.on('data', (data) => { stdout += data.toString(); });
+    proc.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
     proc.stdin.write(JSON.stringify(args));
     proc.stdin.end();
 
@@ -41,14 +50,20 @@ async function runScript(script: string, args: object): Promise<SkillResult> {
     proc.on('close', (code) => {
       clearTimeout(timer);
       if (code !== 0) {
-        resolve({ success: false, message: `Script exited with code: ${code}` });
+        resolve({
+          success: false,
+          message: `Script exited with code: ${code}`,
+        });
         return;
       }
       try {
         const lines = stdout.trim().split('\n');
         resolve(JSON.parse(lines[lines.length - 1]));
       } catch {
-        resolve({ success: false, message: `Failed to parse output: ${stdout.slice(0, 200)}` });
+        resolve({
+          success: false,
+          message: `Failed to parse output: ${stdout.slice(0, 200)}`,
+        });
       }
     });
 
@@ -60,10 +75,18 @@ async function runScript(script: string, args: object): Promise<SkillResult> {
 }
 
 // Write result to IPC results directory
-function writeResult(dataDir: string, sourceGroup: string, requestId: string, result: SkillResult): void {
+function writeResult(
+  dataDir: string,
+  sourceGroup: string,
+  requestId: string,
+  result: SkillResult,
+): void {
   const resultsDir = path.join(dataDir, 'ipc', sourceGroup, 'x_results');
   fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(path.join(resultsDir, `${requestId}.json`), JSON.stringify(result));
+  fs.writeFileSync(
+    path.join(resultsDir, `${requestId}.json`),
+    JSON.stringify(result),
+  );
 }
 
 /**
@@ -75,7 +98,7 @@ export async function handleXIpc(
   data: Record<string, unknown>,
   sourceGroup: string,
   isMain: boolean,
-  dataDir: string
+  dataDir: string,
 ): Promise<boolean> {
   const type = data.type as string;
 
@@ -122,7 +145,10 @@ export async function handleXIpc(
         result = { success: false, message: 'Missing tweetUrl or content' };
         break;
       }
-      result = await runScript('reply', { tweetUrl: data.tweetUrl, content: data.content });
+      result = await runScript('reply', {
+        tweetUrl: data.tweetUrl,
+        content: data.content,
+      });
       break;
 
     case 'x_retweet':
@@ -138,7 +164,57 @@ export async function handleXIpc(
         result = { success: false, message: 'Missing tweetUrl or comment' };
         break;
       }
-      result = await runScript('quote', { tweetUrl: data.tweetUrl, comment: data.comment });
+      result = await runScript('quote', {
+        tweetUrl: data.tweetUrl,
+        comment: data.comment,
+      });
+      break;
+
+    case 'x_read_mentions':
+      result = await runScript('mentions', { since: data.since || undefined });
+      break;
+
+    case 'x_trail_monitor':
+      if (!data.username) {
+        result = { success: false, message: 'Missing username' };
+        break;
+      }
+      result = await runScript('trail-monitor', {
+        username: data.username,
+        max_items: data.max_items || 30,
+      });
+      break;
+
+    case 'x_feed_scan':
+      if (!data.accounts && !data.searches) {
+        result = { success: false, message: 'Missing accounts or searches' };
+        break;
+      }
+      result = await runScript('feed-scanner', {
+        accounts: data.accounts || [],
+        searches: data.searches || [],
+        max_per_source: data.max_per_source || 10,
+      });
+      break;
+
+    case 'x_engagement_loop':
+      result = await runScript('engagement-loop', {
+        accounts: data.accounts || undefined,
+        searches: data.searches || undefined,
+        max_per_source: data.max_per_source || 10,
+      });
+      break;
+
+    case 'x_update_graph':
+      if (!data.observations) {
+        result = { success: false, message: 'Missing observations (expected { trail, feed, engagements })' };
+        break;
+      }
+      result = await runScript('update-graph', data.observations as object);
+      break;
+
+    case 'x_evolve_personality':
+      result = await runScript('evolve-personality', {});
       break;
 
     default:
@@ -149,7 +225,10 @@ export async function handleXIpc(
   if (result.success) {
     logger.info({ type, requestId }, 'X request completed');
   } else {
-    logger.error({ type, requestId, message: result.message }, 'X request failed');
+    logger.error(
+      { type, requestId, message: result.message },
+      'X request failed',
+    );
   }
   return true;
 }

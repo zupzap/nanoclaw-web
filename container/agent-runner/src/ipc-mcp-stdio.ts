@@ -449,6 +449,198 @@ server.tool(
   },
 );
 
+server.tool(
+  'x_read_mentions',
+  'Read recent mentions (tweets that mention you) from X (Twitter). Main group only. Optionally filter by a since timestamp to only get new mentions.',
+  {
+    since: z.string().optional().describe('ISO timestamp to filter mentions after (e.g., "2026-03-09T00:00:00Z"). Omit to get all visible mentions.'),
+  },
+  async (args) => {
+    if (!isMain) {
+      return { content: [{ type: 'text' as const, text: 'Only the main group can interact with X.' }], isError: true };
+    }
+    const requestId = `xmentions-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload: Record<string, string | undefined> = {
+      type: 'x_read_mentions',
+      requestId,
+      groupFolder,
+      timestamp: new Date().toISOString(),
+    };
+    if (args.since) payload.since = args.since;
+    writeXRequest(payload);
+    const result = await waitForXResult(requestId);
+    if (result.success && (result as any).data) {
+      return { content: [{ type: 'text' as const, text: `${result.message}\n\n${JSON.stringify((result as any).data, null, 2)}` }] };
+    }
+    return { content: [{ type: 'text' as const, text: result.message }], isError: !result.success };
+  },
+);
+
+server.tool(
+  'x_trail_monitor',
+  "Monitor the owner's X activity to understand their interests. Scrapes their recent tweets, replies, retweets, quote tweets, and likes. Returns structured activity data.",
+  {
+    username: z.string().describe('X handle to monitor (e.g., "vimarsh_t")'),
+    max_items: z.number().optional().default(30).describe('Maximum number of activity items to return (default 30)'),
+  },
+  async (args) => {
+    if (!isMain) {
+      return { content: [{ type: 'text' as const, text: 'Only the main group can interact with X.' }], isError: true };
+    }
+    const requestId = `xtrail-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    writeXRequest({
+      type: 'x_trail_monitor',
+      requestId,
+      username: args.username,
+      max_items: args.max_items,
+      groupFolder,
+      timestamp: new Date().toISOString(),
+    });
+    const result = await waitForXResult(requestId, 120000);
+    if (result.success && (result as any).data) {
+      return { content: [{ type: 'text' as const, text: `${result.message}\n\n${JSON.stringify((result as any).data, null, 2)}` }] };
+    }
+    return { content: [{ type: 'text' as const, text: result.message }], isError: !result.success };
+  },
+);
+
+server.tool(
+  'x_feed_scan',
+  'Scan specific accounts and search terms on X for interesting tweets. Use this to find engagement opportunities from people and topics you care about.',
+  {
+    accounts: z.array(z.string()).optional().default([]).describe('X handles to scan (e.g., ["aakxssh", "other_handle"])'),
+    searches: z.array(z.string()).optional().default([]).describe('Search terms to scan (e.g., ["AI agents", "agent swarm"])'),
+    max_per_source: z.number().optional().default(10).describe('Maximum tweets per account/search (default 10)'),
+  },
+  async (args) => {
+    if (!isMain) {
+      return { content: [{ type: 'text' as const, text: 'Only the main group can interact with X.' }], isError: true };
+    }
+    const requestId = `xfeed-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    writeXRequest({
+      type: 'x_feed_scan',
+      requestId,
+      accounts: args.accounts,
+      searches: args.searches,
+      max_per_source: args.max_per_source,
+      groupFolder,
+      timestamp: new Date().toISOString(),
+    });
+    const result = await waitForXResult(requestId, 120000);
+    if (result.success && (result as any).data) {
+      return { content: [{ type: 'text' as const, text: `${result.message}\n\n${JSON.stringify((result as any).data, null, 2)}` }] };
+    }
+    return { content: [{ type: 'text' as const, text: result.message }], isError: !result.success };
+  },
+);
+
+server.tool(
+  'x_engagement_loop',
+  "Run the full perception loop: check owner's trail + scan feeds. Returns engagement opportunities — tweets that ssup could reply to, like, RT, or quote. Does NOT take action, just gathers intel. Optionally override accounts and searches.",
+  {
+    accounts: z.array(z.string()).optional().describe('Override: X handles to scan (defaults to interest graph people)'),
+    searches: z.array(z.string()).optional().describe('Override: search terms to scan (defaults to interest graph topics)'),
+    max_per_source: z.number().optional().default(10).describe('Maximum tweets per source (default 10)'),
+  },
+  async (args) => {
+    if (!isMain) {
+      return { content: [{ type: 'text' as const, text: 'Only the main group can interact with X.' }], isError: true };
+    }
+    const requestId = `xloop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload: Record<string, unknown> = {
+      type: 'x_engagement_loop',
+      requestId,
+      groupFolder,
+      timestamp: new Date().toISOString(),
+    };
+    if (args.accounts) payload.accounts = args.accounts;
+    if (args.searches) payload.searches = args.searches;
+    if (args.max_per_source) payload.max_per_source = args.max_per_source;
+    writeXRequest(payload);
+    const result = await waitForXResult(requestId, 180000);
+    if (result.success && (result as any).data) {
+      return { content: [{ type: 'text' as const, text: `${result.message}\n\n${JSON.stringify((result as any).data, null, 2)}` }] };
+    }
+    return { content: [{ type: 'text' as const, text: result.message }], isError: !result.success };
+  },
+);
+
+server.tool(
+  'x_update_graph',
+  'Update the interest graph based on new observations from trail monitoring and feed scanning. Pass in trail (owner X activity), feed (tweets seen), and engagements (ssup past actions and outcomes). The graph tracks topics, people, stances, and vibes to guide personality evolution.',
+  {
+    trail: z.array(z.object({
+      type: z.enum(['tweet', 'like', 'retweet', 'quote']).describe('Type of owner activity'),
+      content: z.string().optional().describe('Text content of the tweet'),
+      author: z.string().optional().describe('Author handle (for likes/RTs/QRTs)'),
+      url: z.string().optional().describe('Tweet URL'),
+      timestamp: z.string().optional().describe('ISO timestamp'),
+      topics: z.array(z.string()).optional().describe('Manually tagged topics'),
+    })).optional().default([]).describe('Owner recent X activity (tweets, likes, RTs)'),
+    feed: z.array(z.object({
+      content: z.string().describe('Tweet text'),
+      author: z.string().describe('Author handle'),
+      url: z.string().optional().describe('Tweet URL'),
+      timestamp: z.string().optional().describe('ISO timestamp'),
+      topics: z.array(z.string()).optional().describe('Manually tagged topics'),
+    })).optional().default([]).describe('Tweets ssup has seen in the feed'),
+    engagements: z.array(z.object({
+      type: z.enum(['reply', 'like', 'retweet', 'quote', 'post']).describe('Type of engagement'),
+      content: z.string().optional().describe('Content of ssup engagement'),
+      target_url: z.string().optional().describe('URL of target tweet'),
+      target_author: z.string().optional().describe('Author ssup engaged with'),
+      timestamp: z.string().optional().describe('ISO timestamp'),
+      outcome: z.object({
+        likes: z.number().optional(),
+        replies: z.number().optional(),
+        retweets: z.number().optional(),
+      }).optional().describe('How the engagement performed'),
+    })).optional().default([]).describe('ssup own past engagements and their outcomes'),
+  },
+  async (args) => {
+    if (!isMain) {
+      return { content: [{ type: 'text' as const, text: 'Only the main group can update the interest graph.' }], isError: true };
+    }
+    const requestId = `xgraph-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    writeXRequest({
+      type: 'x_update_graph',
+      requestId,
+      observations: { trail: args.trail, feed: args.feed, engagements: args.engagements },
+      groupFolder,
+      timestamp: new Date().toISOString(),
+    });
+    const result = await waitForXResult(requestId);
+    if (result.success && (result as any).data) {
+      return { content: [{ type: 'text' as const, text: `${result.message}\n\n${JSON.stringify((result as any).data, null, 2)}` }] };
+    }
+    return { content: [{ type: 'text' as const, text: result.message }], isError: !result.success };
+  },
+);
+
+server.tool(
+  'x_evolve_personality',
+  'Suggest updates to personality.md based on the current interest graph and recent experiences. Returns suggested changes for review — does NOT auto-apply them. The agent or owner must approve the suggested personality update.',
+  {},
+  async () => {
+    if (!isMain) {
+      return { content: [{ type: 'text' as const, text: 'Only the main group can evolve personality.' }], isError: true };
+    }
+    const requestId = `xevolve-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    writeXRequest({
+      type: 'x_evolve_personality',
+      requestId,
+      groupFolder,
+      timestamp: new Date().toISOString(),
+    });
+    const result = await waitForXResult(requestId, 120000);
+    if (result.success && (result as any).data) {
+      const data = (result as any).data;
+      return { content: [{ type: 'text' as const, text: `${result.message}\n\n---\n\n${data.personality || JSON.stringify(data, null, 2)}` }] };
+    }
+    return { content: [{ type: 'text' as const, text: result.message }], isError: !result.success };
+  },
+);
+
 // Start the stdio transport
 const transport = new StdioServerTransport();
 await server.connect(transport);
