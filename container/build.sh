@@ -13,7 +13,8 @@ CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 echo "Building NanoClaw agent container image..."
 echo "Image: ${IMAGE_NAME}:${TAG}"
 
-${CONTAINER_RUNTIME} build -t "${IMAGE_NAME}:${TAG}" .
+cd "$SCRIPT_DIR/.."
+${CONTAINER_RUNTIME} build -t "${IMAGE_NAME}:${TAG}" -f container/Dockerfile .
 
 echo ""
 echo "Build complete!"
