@@ -9,6 +9,7 @@ import {
   TRIGGER_PATTERN,
 } from './config.js';
 import './channels/index.js';
+import { readEnvFile } from './env.js';
 import {
   getChannelFactory,
   getRegisteredChannelNames,
@@ -51,6 +52,7 @@ import {
 } from './sender-allowlist.js';
 import { startSchedulerLoop } from './task-scheduler.js';
 import { Channel, NewMessage, RegisteredGroup } from './types.js';
+import { startAutonomousLoop } from './x-autonomous.js';
 import { logger } from './logger.js';
 
 // Re-export for backwards compatibility during refactor
@@ -566,6 +568,15 @@ async function main(): Promise<void> {
     writeGroupsSnapshot: (gf, im, ag, rj) =>
       writeGroupsSnapshot(gf, im, ag, rj),
   });
+  // Start autonomous X engagement loop (opt-in via X_AUTONOMOUS=true)
+  const { X_AUTONOMOUS } = readEnvFile(['X_AUTONOMOUS']);
+  if (X_AUTONOMOUS === 'true' || process.env.X_AUTONOMOUS === 'true') {
+    startAutonomousLoop({
+      registeredGroups: () => registeredGroups,
+      getSessions: () => sessions,
+    });
+  }
+
   queue.setProcessMessagesFn(processGroupMessages);
   recoverPendingMessages();
   startMessageLoop().catch((err) => {
